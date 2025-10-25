@@ -6,7 +6,7 @@ from pandas import DataFrame
 from sklearn.linear_model import LinearRegression
 
 # Define the assets and the period for data collection
-assets: list = ['AAPL', 'MSFT', 'GOOGL']
+assets: list = ['AAPL', 'GOOGL', 'MSFT']
 start_date = '2024-11-15'
 end_date = '2024-11-29'
 
@@ -14,7 +14,7 @@ end_date = '2024-11-29'
 data: DataFrame = yf.download(assets, start=start_date, end=end_date)['Close']
 
 # Initialize dictionaries to store detrended log-prices and returns
-detrended_log_prices = {}
+detrended_log_prices: dict = {}
 
 detrended_returns: dict = {}
 
@@ -32,10 +32,11 @@ for asset in assets:
     trend = model.predict(X)
 
     # Calculate the detrended logarithmic prices (residuals)
-    detrended_log_prices[asset]: ndarray = log_prices - trend
+    detrended_log_prices[asset]: dict = log_prices - trend
 
     # Compute returns as differences between detrended logarithmic prices
-    detrended_returns[asset]: ndarray = detrended_log_prices[asset][1:] - detrended_log_prices[asset][:-1]
+    detrended_returns[asset]: dict = detrended_log_prices[asset][1:] - detrended_log_prices[asset][:-1]
+    pass
 
 # Convert the detrended returns dictionary to a DataFrame
 detrended_returns_df = pd.DataFrame({asset: detrended_returns[asset].flatten() for asset in assets})
