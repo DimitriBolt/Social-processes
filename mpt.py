@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 from numpy import ndarray
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from sklearn.linear_model import LinearRegression
 
 # Define the assets and the period for data collection
@@ -11,7 +11,7 @@ start_date = '2024-11-15'
 end_date = '2024-11-29'
 
 # Fetch historical adjusted closing prices
-data: DataFrame = yf.download(assets, start=start_date, end=end_date)['Close']
+data: Series = yf.download(assets, start=start_date, end=end_date, auto_adjust=True)['Close']
 
 # Initialize dictionaries to store detrended log-prices and returns
 detrended_log_prices: dict = {}
