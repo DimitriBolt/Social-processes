@@ -1,99 +1,103 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
-Задача (Example 6.2, секция 6.1: Линейно-ограниченная квадратичная оптимизация):
+Markowitz minimum-variance portfolio with a target return (Example 6.2 style).
+
+We solve the quadratic program:
     minimize   (1/2) * w^T Σ w
     subject to 1^T w = 1
                r^T w = d
 
-Где:
-- Σ: ковариационная матрица доходностей активов
-- r: вектор ожидаемых доходностей
-- d: целевой ожидаемый доход портфеля (здесь d = 0.1 = 10% годовых)
-- w: веса портфеля
+KKT = Karush–Kuhn–Tucker conditions.
+For this strictly convex quadratic problem with linear equality constraints,
+the KKT system is linear and gives the unique optimum (assuming Σ is SPD):
 
-Решение через KKT (как в книге):
-    [ Σ   r   1 ] [ w       ] = [ 0 ]
-    [ r^T 0   0 ] [ λ_return]   [ d ]
-    [ 1^T 0   0 ] [ λ_budget]   [ 1 ]
-Решаем линейную систему на (w, λ_return, λ_budget).
+    [ Σ    r     1 ] [ w            ] = [ 0 ]
+    [ r^T  0     0 ] [ λ_return     ]   [ d ]
+    [ 1^T  0     0 ] [ λ_budget     ]   [ 1 ]
+
+We then solve this linear system for (w, λ_return, λ_budget).
+
+Notes on annualization:
+- If r_daily is the vector of mean daily log-returns and Σ_daily is the daily covariance,
+  a standard scaling is:
+      r_annual = 252 * r_daily
+      Σ_annual = 252 * Σ_daily
+- This implies standard deviation scales as sqrt(252).
 """
 
 import numpy as np
-import glob
 import pandas as pd
-from pandas import DataFrame
-from log_returns import Log_returns
+import matplotlib.pyplot as plt
 
-if __name__ == '__main__':
-    # -----------------------------
-    # 1) Подготовка данных
-    # -----------------------------
-    # open csv file nasdaq_screener_*.csv to pandas dataframe from current directory
-    csv_path = glob.glob("./nasdaq_screener_*.csv")[0]
-    df = pd.read_csv(csv_path)
-    symbols: list[str] = df["Symbol"].astype(str).dropna().reset_index(drop=True).tolist()
+# -----------------------------
+# 1) Data ingestion
+# -----------------------------
+# Expect a CSV with detrended daily log-returns (columns = assets, rows = dates).
+# This file is produced by your own pipeline.
+df_ret = pd.read_csv("detrended_returns_df.csv", index_col=0)
 
-    log_returns: Log_returns = Log_returns(symbols_local=symbols,
-                                           start_date_local='2025-01-01',
-                                           end_date_local='2025-10-01')
-    detrended_returns_df: DataFrame = log_returns.get_log_returns()
-    detrended_returns_df = detrended_returns_df.dropna(axis=0, how='any')
+# -----------------------------
+# 2) Build annualized r and Σ
+# -----------------------------
+TRADING_DAYS = 252
+r_daily = df_ret.mean().to_numpy()       # shape (n,)
+Sigma_daily = df_ret.cov().to_numpy()    # shape (n, n)
 
+r = r_daily * TRADING_DAYS
+Sigma = Sigma_daily * TRADING_DAYS
 
-    # Calculate the covariance matrix of the detrended returns
-    covariance_matrix = detrended_returns_df.cov()
+# Target annual return d = 10%
+d = 0.1
 
-    # Вектор ожидаемых доходностей r — средние по столбцам (по активам)
-    # (для дневных лог-доходностей это средние дневные; далее мы их годуем)
-    r_daily = detrended_returns_df.mean().to_numpy()            # shape (n_assets,)
-    Sigma_daily = covariance_matrix.to_numpy()         # shape (n_assets, n_assets)
+# -----------------------------
+# 3) Solve KKT linear system
+# -----------------------------
+n = Sigma.shape[0]
+ones = np.ones(n)
 
-    # -----------------------------
-    # 2) Приведение к годовым величинам
-    # -----------------------------
-    TRADING_DAYS = 252
-    r = r_daily * TRADING_DAYS             # годовые ожидания
-    Sigma = Sigma_daily * TRADING_DAYS     # годовая ковариация (дисперсия масштабир. ~ T)
+# Block matrix and right-hand side (rhs = right-hand side vector of the linear system).
+K = np.block([
+    [Sigma,               r.reshape(-1, 1),    ones.reshape(-1, 1)],
+    [r.reshape(1, -1),    np.zeros((1, 1)),    np.zeros((1, 1))   ],
+    [ones.reshape(1, -1), np.zeros((1, 1)),    np.zeros((1, 1))   ]
+])
+rhs = np.concatenate([np.zeros(n), np.array([d, 1.0])])
 
-    # Целевой доход: 10% годовых
-    d = 0.1
+solution = np.linalg.solve(K, rhs)
+w = solution[:n]
+lambda_return = solution[n]
+lambda_budget = solution[n+1]
 
-    # -----------------------------
-    # 3) Сборка и решение KKT-системы
-    # -----------------------------
-    n = Sigma.shape[0]
-    ones = np.ones(n)
+# -----------------------------
+# 4) Report scalar diagnostics (do not print the weight vector)
+# -----------------------------
+exp_return = float(r @ w)                # should be close to d
+variance = float(w @ (Sigma @ w))        # portfolio variance
+std_dev = float(np.sqrt(variance))       # portfolio std
+cond_number = float(np.linalg.cond(Sigma))  # condition number of Σ
 
-    # Блоковая матрица и правые части (как в примере 6.2)
-    K = np.block([
-        [Sigma,               r.reshape(-1, 1),    ones.reshape(-1, 1)],
-        [r.reshape(1, -1),    np.zeros((1, 1)),    np.zeros((1, 1))   ],
-        [ones.reshape(1, -1), np.zeros((1, 1)),    np.zeros((1, 1))   ]
-    ])
-    rhs = np.concatenate([np.zeros(n), np.array([d, 1.0])])
+print("=== Minimum-Variance Portfolio (target d = 10% annual) ===")
+print(f"Sum of weights (1^T w):       {w.sum():.10f}")
+print(f"Target return (d):            {d:.6f}")
+print(f"Achieved expected return:     {exp_return:.6f}")
+print(f"Portfolio variance (w^TΣw):   {variance:.8f}")
+print(f"Portfolio std (sqrt):         {std_dev:.6f}")
+print(f"Condition number cond(Σ):     {cond_number:.6e}")
 
-    solution = np.linalg.solve(K, rhs)
-    w = solution[:n]                # искомые веса
-    lambda_return = solution[n]     # множитель Лагранжа при r^T w = d
-    lambda_budget = solution[n+1]   # множитель Лагранжа при 1^T w = 1
+# -----------------------------
+# 5) Plot spectrum of the covariance matrix
+# -----------------------------
+# Compute and plot eigenvalues of Σ (symmetric -> use eigvalsh).
+eigs = np.linalg.eigvalsh(Sigma)   # non-decreasing order
+eigs_sorted = np.sort(eigs)[::-1]  # descending for plotting aesthetics
 
-    # -----------------------------
-    # 4) Проверки и вывод
-    # -----------------------------
-    exp_return = float(r @ w)                   # должно быть близко к d (=0.1)
-    variance = float(w @ (Sigma @ w))           # w^T Σ w
-    std_dev = float(np.sqrt(variance))          # σ портфеля
-
-    # Красивый вывод с именами активов
-    asset_names = list(detrended_returns_df.columns)
-    weights_series = pd.Series(w, index=asset_names, name="weight")
-
-    print("=== Минимальная дисперсия при целевом доходе d = 10% годовых (Example 6.2) ===")
-    print(f"Сумма весов 1^T w         = {weights_series.sum():.10f}")
-    print(f"Ожидаемый доход r^T w     = {exp_return:.6f}")
-    print(f"Дисперсия портфеля w^TΣw  = {variance:.8f}")
-    print(f"Стандартное отклонение σ  = {std_dev:.6f}\n")
-
-    print("Веса портфеля (w):")
-    for name, wi in weights_series.items():
-        print(f"{name:>20s}: {wi:+.8f}")
-
+plt.figure()
+plt.plot(eigs_sorted, marker='o', linestyle='-')
+plt.title("Covariance Matrix Spectrum")
+plt.xlabel("Index (sorted by magnitude)")
+plt.ylabel("Eigenvalue")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
