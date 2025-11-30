@@ -1,0 +1,201 @@
+\documentclass[aspectratio=169]{beamer}
+
+% ---------- pdfLaTeX-safe setup ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usetheme{Madrid}
+\setbeamertemplate{navigation symbols}{}
+
+% ---------- math & graphics ----------
+\usepackage{amsmath, amssymb, bm}
+\usepackage{graphicx}
+\graphicspath{{./}{/mnt/data/}}
+
+\title{RPCA-based Risk Modeling for Portfolio Optimization}
+\subtitle{An Unsupervised, Spectral ML Approach}
+\author{Dimitri Bolt}
+\institute{Physics-Informed Machine Learning\\ \small Industry supervision: Morgan Stanley}
+\date{\today}
+
+\begin{document}
+	
+	% =========================
+	\begin{frame}
+		\titlepage
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Goal \& Setting}
+		\small
+		\begin{itemize}
+			\item Task: build an optimal portfolio in the Markowitz framework.
+			\item $\Sigma$: covariance matrix of asset returns; $w$: portfolio weights.
+			\item We minimize portfolio \textbf{risk} given full investment.
+		\end{itemize}
+		\begin{equation*}
+			\min_{w\in\mathbb{R}^N} \; w^{\top}\Sigma\, w
+			\quad \text{s.t.}\quad \mathbf{1}^{\top} w = 1
+		\end{equation*}
+		\begin{equation*}
+			\text{Portfolio variance (risk)}:\quad \mathrm{Var}(w^{\top} r_t) = w^{\top}\Sigma\, w
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Challenge Observed in Data}
+		\small
+		\begin{itemize}
+			\item Empirical covariance is extremely ill-conditioned.
+			\item Condition number before RPCA: \texttt{cond(Sigma)} $= 364{,}890{,}911{,}914{,}999{,}808$.
+		\end{itemize}
+		\begin{center}
+			\includegraphics[width=0.75\linewidth]{EigenValuesHistogram.png}
+		\end{center}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Why Ill-Conditioning is Dangerous}
+		\small
+		\begin{itemize}
+			\item Diagonalization: $\Sigma = Q \Lambda Q^{\top}$, inverse: $\Sigma^{-1} = Q \Lambda^{-1} Q^{\top}$.
+			\item Many tiny eigenvalues $\Rightarrow$ huge entries in $\Lambda^{-1}$.
+			\item Consequence: noisy $\Sigma$ leads to unstable, highly leveraged $w$ and poor risk control.
+		\end{itemize}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Input Data (Preview)}
+		\small
+		\begin{itemize}
+			\item Source: \texttt{downloaded\_data.pkl} (prices panel).
+			\item We visualize the top-left corner of the table.
+		\end{itemize}
+		\begin{center}
+			\includegraphics[width=0.75\linewidth]{downloaded_data_head.png}
+		\end{center}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{From Prices to Detrended Log-Returns (Appendix M)}
+		\small
+		\begin{itemize}
+			\item Log-prices: $\ell_{t,i} = \log P_{t,i}$.
+			\item Log-returns: $r_{t,i} = \ell_{t,i} - \ell_{t-1,i}$.
+			\item Returns matrix: $X = [\, r_{t,i} \,] \in \mathbb{R}^{T \times N}$ (rows = time, cols = assets).
+		\end{itemize}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Step 1 — Column-wise Centering}
+		\small
+		\begin{itemize}
+			\item Subtract robust location per column (median).
+			\item Purpose: remove residual drifts; reduce artificial rank.
+		\end{itemize}
+		\begin{equation*}
+			\tilde{X} = X - \mathrm{median}(X) \quad \text{(column-wise)}
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Step 2 — Column-wise Scaling (Robust via MAD)}
+		\small
+		\begin{itemize}
+			\item \textbf{MAD (Median Absolute Deviation):} $\mathrm{MAD}_i = \mathrm{median}\big(|\tilde{X}_{\cdot,i} - \mathrm{median}(\tilde{X}_{\cdot,i})|\big)$.
+			\item Convert to std-like scale: $s_i = 1.4826 \cdot \mathrm{MAD}_i$ (Normal-consistent).
+			\item Purpose: comparable scale across assets so RPCA penalties act uniformly.
+		\end{itemize}
+		\begin{equation*}
+			X_{\mathrm{cs}}(\cdot,i) = \tilde{X}(\cdot,i)\,/\,s_i
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{RPCA: L + S Decomposition (Idea)}
+		\small
+		\begin{itemize}
+			\item We split centered-and-scaled returns into \textbf{structure} and \textbf{spikes}.
+			\item $L$: low-rank (few factors: market and sectors; smooth cross-sectional pattern).
+			\item $S$: sparse (rare, large idiosyncratic shocks; outliers and events).
+			\item Goal: robust risk estimation by isolating factors in $L$ and anomalies in $S$.
+		\end{itemize}
+		\begin{equation*}
+			X_{\mathrm{cs}} = L + S
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Step 3 — RPCA via a Simple ADMM Loop}
+		\small
+		\begin{itemize}
+			\item Objective (PCP): minimize nuclear norm of $L$ and $\ell_1$-norm of $S$.
+			\item Updates are simple proximal steps (SVT and soft-thresholding).
+		\end{itemize}
+		\begin{equation*}
+			\min_{L,S}\; \|L\|_{\ast} + \lambda \|S\|_{1} \quad \text{s.t.}\quad X_{\mathrm{cs}} = L + S
+		\end{equation*}
+		\begin{equation*}
+			L^{(k+1)} = \mathrm{SVT}\!\left(X_{\mathrm{cs}} - S^{(k)} + U^{(k)}, \tfrac{1}{\mu}\right),\quad
+			S^{(k+1)} = \mathrm{soft}\!\left(X_{\mathrm{cs}} - L^{(k+1)} + U^{(k)}, \tfrac{\lambda}{\mu}\right)
+		\end{equation*}
+		\begin{equation*}
+			U^{(k+1)} = U^{(k)} + \big(X_{\mathrm{cs}} - L^{(k+1)} - S^{(k+1)}\big)
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Step 4A — Factor-only Covariance}
+		\small
+		\begin{itemize}
+			\item In original units, compute covariance from $L$.
+			\item Insight: factor-only covariance can be nearly singular (little specific risk).
+		\end{itemize}
+		\begin{equation*}
+			\Sigma_{L} = \mathrm{Cov}(L)
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Step 4B — Add Specific Risk (Diagonal)}
+		\small
+		\begin{itemize}
+			\item Residuals in original units: $E = (X - \mathrm{shift}) - L$.
+			\item Specific variance per asset from $E$ (diagonal only).
+			\item Final RPCA covariance (used for optimization).
+		\end{itemize}
+		\begin{equation*}
+			\Sigma_{\mathrm{RPCA}} = \Sigma_{L} + \mathrm{diag}\!\big(\mathrm{Var}(E)\big)
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Numerical Result: Conditioning}
+		\small
+		\begin{itemize}
+			\item Before RPCA: $\mathrm{cond}(\Sigma_{\text{emp}}) = 364{,}890{,}911{,}914{,}999{,}808$.
+			\item Factor-only: $\mathrm{cond}(\Sigma_{L}) = 1{,}720{,}831{,}211{,}824{,}997{,}376$.
+			\item \textbf{RPCA factor + specific diag:} $\mathrm{cond}(\Sigma_{\mathrm{RPCA}}) = 53{,}854$.
+		\end{itemize}
+		\begin{equation*}
+			\text{Better conditioning} \;\Rightarrow\; \text{more stable weights and optimization.}
+		\end{equation*}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Next Steps}
+		\small
+		\begin{itemize}
+			\item Optional: RMT denoising applied to $\Sigma_{\mathrm{RPCA}}$.
+			\item Solve Markowitz portfolios with improved covariance.
+			\item Backtests: Sharpe, turnover, diversification (ENB), calibration, drawdowns.
+			\item Stress testing across regimes; ablations and sensitivity.
+		\end{itemize}
+	\end{frame}
+	
+	% =========================
+	\begin{frame}{Thanks \& Questions}
+		\centering{\Large Thank you!}
+	\end{frame}
+	
+\end{document}

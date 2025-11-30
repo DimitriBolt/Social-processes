@@ -34,13 +34,14 @@ class LogReturns:
         # n = 100
         # data: Series = yf.download(tickers=assets_without_failed[0:n], start=start, end=end, timeout=20, auto_adjust=True)['Close']
         data: Series = yf.download(tickers=assets_without_failed, start=start, end=end, timeout=20, auto_adjust=True)['Close']
+
         # Save to pickle file data to current directory
-        with open('downloaded_data.pkl', 'wb') as f:
-            pickle.dump(data, f)
-        print("Downloaded data saved to downloaded_data.pkl")
-        # Save to csv file data to current directory
-        data.to_csv('downloaded_data.csv', index=True)
-        print("Downloaded data saved to downloaded_data.csv")
+        # with open('downloaded_data.pkl', 'wb') as f:
+        #     pickle.dump(data, f)
+        # print("Downloaded data saved to downloaded_data.pkl")
+        # # Save to csv file data to current directory
+        # data.to_csv('downloaded_data.csv', index=True)
+        # print("Downloaded data saved to downloaded_data.csv")
 
         log_prices = np.log(data)
         X = np.arange(len(log_prices)).reshape(-1, 1)  # Time index as the independent variable
@@ -64,7 +65,6 @@ class LogReturns:
 
 if __name__ == '__main__':
     # open csv file nasdaq_screener_*.csv to pandas dataframe from current directory
-    # csv_path = glob.glob("./nasdaq_screener_*.csv")[-1]
     # csv_path = glob.glob("./nasdaq_screener_*.csv")[-2] # nasdaq_screener_100.csv
     csv_path = glob.glob("./nasdaq_screener_*.csv")[-1] # nasdaq_screener_200.csv
 
@@ -81,8 +81,15 @@ if __name__ == '__main__':
     # detrended_returns_df: DataFrame = detrended_returns_df.rolling(window=45).mean().dropna()
 
     # Save to csv file detrended_returns_df to current directory
-    detrended_returns_df.to_csv('detrended_returns_df.csv', index=True)
-    # Save to pickle file detrended_returns_df to current directory
-    with open('detrended_returns_df.pkl', 'wb') as f:
-        pickle.dump(detrended_returns_df, f)
-    print("Detrended returns saved to detrended_returns_df.csv and detrended_returns_df.pkl")
+    # detrended_returns_df.to_csv('detrended_returns_df_100.csv', index=True)
+    # print("Detrended returns saved to detrended_returns_df_100.csv")
+
+    detrended_returns_df.to_csv('detrended_returns_df_200.csv', index=True)
+    print("Detrended returns saved to detrended_returns_df_200.csv")
+
+
+    # TO DO удалить закомментированный код ниже
+    # # Save to pickle file detrended_returns_df to current directory
+    # with open('detrended_returns_df.pkl', 'wb') as f:
+    #     pickle.dump(detrended_returns_df, f)
+    # print("Detrended returns saved to detrended_returns_df.pkl")

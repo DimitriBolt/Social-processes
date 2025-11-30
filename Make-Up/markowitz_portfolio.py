@@ -34,7 +34,7 @@ import matplotlib.ticker as mticker # 1. Импортируем ticker
 # 1) Data ingestion
 # -----------------------------
 # Expect a CSV with detrended daily log-returns (columns = assets, rows = dates).
-detrended_returns_df = pd.read_csv("detrended_returns_df.csv", index_col=0)
+detrended_returns_df = pd.read_csv("../detrended_returns_df_100.csv", index_col=0)
 
 # -----------------------------
 # 2) Build annualized Σ
@@ -86,7 +86,7 @@ for date in detrended_returns_df.index:
     dates.append(datetime.strptime(date, "%Y-%m-%d").date())
     relative_delta_w_l1_norms.append(relative_delta_w_l1_norm)
 
-    print(f"Date: {date}, relative l1 norm of weight change: {relative_delta_w_l1_norm:.0%}, condition number of KKT: {np.linalg.cond(K):,.0f}")
+    # print(f"Date: {date}, relative l1 norm of weight change: {relative_delta_w_l1_norm:.0%}, condition number of KKT: {np.linalg.cond(K):,.0f}")
 
     # Sanity checks
     # Sum of weights should be 1
@@ -131,7 +131,7 @@ ax.plot(dates[1:], relative_delta_w_l1_norms[1:], marker='o', linestyle='--')
 formatter = mticker.PercentFormatter(xmax=1.0)
 ax.yaxis.set_major_formatter(formatter)
 ax.set_ylim(bottom=0, top=4.00)  # Устанавливаем пределы оси Y от 0% до 400%
-# ax.set_ylim(bottom=0, top=0.50)  # Устанавливаем пределы оси Y от 0% до 50%
+# ax.set_ylim(bottom=0, top=0.50)  # Устанавливаем пределы оси Y от 0% до 50% - Только для Степанова!
 
 
 # Настройка графика
@@ -142,7 +142,7 @@ plt.xticks(rotation=45)
 plt.grid()
 plt.tight_layout()
 # Save the plot
-# plt.savefig('weight_change_l1_norm_timeseries.png', format='png')
+# plt.savefig('weight_change_l1_norm_timeseries_200.png', format='png') # Не забыть поменять Пределы оси Y до 400%
 plt.savefig('weight_change_l1_norm_timeseries_100.png', format='png')
 
 plt.show()
