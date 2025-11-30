@@ -27,7 +27,7 @@ class LogReturns:
     def __private_method(self, assets: list[str], start: str, end: str) -> DataFrame:
         delisted: list[str] = ['STRD', 'STRF', 'STRC', 'BRKRP', 'STRK', 'SNDK', 'CRCL', 'MCHPP', 'AGNCZ', 'SAIL', 'GLXY', 'CRWV'] + ['BRK/A', 'BRK/B'] + ['EMP']
         # bad defined
-        delisted: list[str] = delisted + ['ALAB', 'ASTS', 'AUR', 'BE', 'CRDO', 'FTAI', 'HIMS', 'IONQ', 'MP', 'OKLO', 'RGTI', 'RKLB', 'SATS', 'SMCI', 'SMR', 'TEM', 'TTD'] + ['AFRM', 'APP', 'CNC', 'COHR', 'COIN', 'CVNA', 'HOOD', 'JOBY', 'LITE', 'MDB', 'MRVL', 'MSTR', 'PLTR', 'RDDT', 'SYM', 'U', 'VRT', 'VST', 'W']
+        delisted: list[str] = delisted + ['ALAB', 'ASTS', 'AUR', 'BE', 'CRDO', 'FTAI', 'HIMS', 'IONQ', 'MP', 'OKLO', 'RGTI', 'RKLB', 'SATS', 'SMCI', 'SMR', 'TEM', 'TTD'] + ['AFRM', 'APP', 'CNC', 'COHR', 'COIN', 'CVNA', 'HOOD', 'JOBY', 'LITE', 'MDB', 'MRVL', 'MSTR', 'PLTR', 'RDDT', 'SYM', 'U', 'VRT', 'VST', 'W'] + ['CCZ']
         failed_downloads = delisted
         assets_without_failed: list[str] = [asset for asset in assets if asset not in failed_downloads]
         # assets_without_failed: list = ['AAPL', 'MSFT', 'GOOGL']

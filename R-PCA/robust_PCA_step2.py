@@ -1,18 +1,10 @@
 # robust_PCA.py
 # ------------------------------------------------------------
-# Purpose (educational):
-#   Step 1 — Column-wise centering (median)
+# Purpose:
 #   Step 2 — Column-wise scaling (robust, via MAD*1.4826)
 # ------------------------------------------------------------
-# This script prepares a detrended returns matrix for RPCA in two clean steps.
-# Step 1 subtracts a robust per-column center (median).
-# Step 2 divides by a robust per-column scale estimate (MAD * 1.4826),
-# making RPCA penalties comparable across assets.
-#
-# Notes for this educational version:
-# - We assume the data are ideal (already cleaned).
-# - Index = dates, columns = assets, values = detrended log-returns.
-# - No defensive checks; clarity > robustness.
+# This script prepares a detrended returns matrix for RPCA in 2nd clean steps.
+# Step 2 divides by a robust per-column scale estimate (MAD * 1.4826), making RPCA penalties comparable across assets.
 
 import pandas as pd
 import numpy as np
@@ -21,48 +13,14 @@ from typing import Tuple
 # -----------------------------
 # 1) Data ingestion
 # -----------------------------
-# Expect a CSV with detrended daily log-returns (columns = assets, rows = dates).
-detrended_returns_df = pd.read_csv("../detrended_returns_df_200.csv", index_col=0)
-detrended_returns_df.index = pd.to_datetime(detrended_returns_df.index)
-
-
-# -----------------------------
-# Step 1: Column-wise centering
-# -----------------------------
-def center_columns_median(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-    """
-    Column-wise centering by subtracting the median of each column.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        T x N returns matrix (rows = time, cols = assets).
-
-    Returns
-    -------
-    centered_df : pd.DataFrame
-        The centered matrix where each column has median ~ 0.
-    shift_vector : pd.Series
-        The per-column medians that were subtracted (for inverse-transform).
-
-    Notes
-    -----
-    - Median is used as a robust location estimator (less sensitive to outliers).
-    """
-    # Per-column median (robust location)
-    shift_vector = df.median(axis=0)
-
-    # Subtract the median from each column
-    centered_df = df - shift_vector
-
-    return centered_df, shift_vector
+#  For 2nd step expect a returns centered parquet file from step 1.
+centered_df = pd.read_parquet("returns_centered.parquet")
 
 
 # -----------------------------
 # Step 2: Column-wise scaling (robust)
 # -----------------------------
-def scale_columns_mad(centered_df: pd.DataFrame, mad_consistency: float = 1.4826
-                      ) -> Tuple[pd.DataFrame, pd.Series]:
+def scale_columns_mad(centered_df: pd.DataFrame, mad_consistency: float = 1.4826) -> Tuple[pd.DataFrame, pd.Series]:
     """
     Column-wise robust scaling using MAD (Median Absolute Deviation).
 
@@ -102,17 +60,6 @@ def scale_columns_mad(centered_df: pd.DataFrame, mad_consistency: float = 1.4826
 
 if __name__ == "__main__":
     # --------------------------------------------------------
-    # Step 1: Centering (median)
-    # --------------------------------------------------------
-    centered_df, shift_vec = center_columns_median(detrended_returns_df)
-    centered_df.to_parquet("returns_centered.parquet")
-    shift_vec.to_csv("center_shift_vector.csv")
-
-    # Quick sanity check: column medians should be ~0
-    print("Sanity — |column median| after centering (should be ~0):")
-    print(centered_df.median().abs().describe())
-
-    # --------------------------------------------------------
     # Step 2: Scaling (robust, MAD*1.4826)
     # --------------------------------------------------------
     scaled_df, scale_vec = scale_columns_mad(centered_df, mad_consistency=1.4826)
@@ -125,8 +72,6 @@ if __name__ == "__main__":
     print("\nSanity — robust spread (MAD*1.4826) after scaling (~1 expected):")
     print(mad_check.describe())
 
-    print("\n[INFO] Step 1 (centering) and Step 2 (scaling) completed. Files saved:")
-    print(" - returns_centered.parquet")
-    print(" - center_shift_vector.csv")
+    print("\n[INFO] Step 2 (scaling) completed. Files saved:")
     print(" - returns_centered_scaled.parquet")
     print(" - scale_vector.csv")

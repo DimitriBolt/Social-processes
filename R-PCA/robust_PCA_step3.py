@@ -1,10 +1,8 @@
-# robust_PCA.py
 # ------------------------------------------------------------
-# Purpose (educational):
+# Purpose: Robust PCA (RPCA) via ADMM on centered+scaled returns
 #   Step 3 — RPCA via a simple ADMM loop (clean and readable)
 # ------------------------------------------------------------
-# This script adds a SINGLE, CLEAR function to perform Robust PCA (RPCA)
-# on the centered-and-scaled returns matrix from Step 1 & 2.
+# This script adds a SINGLE, CLEAR function to perform Robust PCA (RPCA) on the centered-and-scaled returns matrix from Step 1 & 2.
 #
 # Pipeline reminder:
 #   - Step 1 (done earlier): center columns by subtracting the median.
@@ -17,11 +15,9 @@
 #   X  = X_cs * scale + shift
 #   L0 = L     * scale              (low-rank in original units)
 #   S0 = S     * scale              (sparse in original units)
-# (Per-column operations: multiply each column of L and S by its original scale,
-#  and, when reconstructing the full X, add the per-column shift vector.)
+# (Per-column operations: multiply each column of L and S by its original scale, and, when reconstructing the full X, add the per-column shift vector.)
 #
 # Notes (by design, for readability over performance/robustness):
-#   - We assume ideal data (already cleaned).
 #   - We use a plain ADMM loop with full SVD for clarity (not efficient for huge matrices).
 #   - Parameters (lambda/mu/tol) are given friendly defaults; tune them later as needed.
 
