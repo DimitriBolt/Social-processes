@@ -22,7 +22,7 @@ from typing import Tuple
 # 1) Data ingestion
 # -----------------------------
 # Expect a CSV with detrended daily log-returns (columns = assets, rows = dates).
-detrended_returns_df = pd.read_csv("detrended_returns_df.csv", index_col=0)
+detrended_returns_df = pd.read_csv("../detrended_returns_df_200.csv", index_col=0)
 detrended_returns_df.index = pd.to_datetime(detrended_returns_df.index)
 
 

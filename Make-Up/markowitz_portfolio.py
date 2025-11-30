@@ -34,7 +34,7 @@ import matplotlib.ticker as mticker # 1. Импортируем ticker
 # 1) Data ingestion
 # -----------------------------
 # Expect a CSV with detrended daily log-returns (columns = assets, rows = dates).
-detrended_returns_df = pd.read_csv("../detrended_returns_df_100.csv", index_col=0)
+detrended_returns_df = pd.read_csv("../detrended_returns_df_200.csv", index_col=0)
 
 # -----------------------------
 # 2) Build annualized Σ
@@ -143,7 +143,7 @@ plt.grid()
 plt.tight_layout()
 # Save the plot
 # plt.savefig('weight_change_l1_norm_timeseries_200.png', format='png') # Не забыть поменять Пределы оси Y до 400%
-plt.savefig('weight_change_l1_norm_timeseries_100.png', format='png')
+plt.savefig('weight_change_l1_norm_timeseries_200.png', format='png')
 
 plt.show()
 # -----------------------------
