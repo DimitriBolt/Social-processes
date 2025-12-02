@@ -98,7 +98,7 @@ ax.plot(dates[1:], relative_delta_w_l1_norms[1:], marker='o', linestyle='--')
 ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
 ax.set_ylim(bottom=0, top=4.00)  # 0% to 400%
 
-ax.set_title(r'$\frac{||\vec{\Delta w}||_{l^1}}{||\vec{w}||_{l^1}}$ over Time (RPCA Σ)')
+ax.set_title(r'$\frac{||\vec{\Delta w}||_{l^1}}{||\vec{w}||_{l^1}}$ over Time (R-PCA Σ)')
 ax.set_xlabel('Date')
 ax.set_ylabel(r'$\frac{||\vec{\Delta w}||_{l^1}}{||\vec{w}||_{l^1}}$ (%)')
 plt.xticks(rotation=45)
