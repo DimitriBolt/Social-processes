@@ -40,7 +40,7 @@ TRADING_DAYS: int = 252
 # -----------------------------
 L_df_orig: pd.DataFrame = pd.read_parquet("L_original.parquet")
 shift_vec: pd.Series = pd.read_csv("center_shift_vector.csv", index_col=0).iloc[:, 0].astype(float)
-X_orig: pd.DataFrame = pd.read_csv("detrended_returns_df.csv", index_col=0)
+X_orig: pd.DataFrame = pd.read_csv("../detrended_returns_df_200.csv", index_col=0)
 X_orig.index = pd.to_datetime(X_orig.index)
 
 # Align columns just in case (educational: we assume they match)
