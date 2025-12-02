@@ -21,12 +21,12 @@ evals_RP = evals_RP[evals_RP > 0]
 
 plt.figure(figsize=(8, 5))
 bins = 50
-plt.hist(evals_L,  bins=bins, alpha=0.5, label=r"$\Sigma_L$",  density=True)
-plt.hist(evals_RP, bins=bins, alpha=0.5, label=r"$\Sigma_{\mathrm{RPCA}}$", density=True)
+plt.hist(evals_L,  bins=bins, alpha=0.5, label=r"$∑_L$",  density=True)
+plt.hist(evals_RP, bins=bins, alpha=0.5, label=r"$∑_{\mathrm{R-PCA}}$", density=True)
 plt.xscale("log")
 plt.xlabel("Eigenvalue (log scale)")
 plt.ylabel("Density (histogram)")
-plt.title("Eigenvalue spectra: $\Sigma_L$ vs $\Sigma_{\mathrm{RPCA}}$ (annualized)")
+plt.title("Eigenvalue spectra: $∑_L$ vs $∑_{R-PCA}$ (annualized)")
 plt.legend()
 plt.tight_layout()
 plt.show()

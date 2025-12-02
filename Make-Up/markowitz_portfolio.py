@@ -103,19 +103,19 @@ for date in detrended_returns_df.index:
 cond_number = float(np.linalg.cond(Sigma))  # condition number of Σ
 print(f"Condition number cond(Σ):     {cond_number:,.0f}")
 
-# -----------------------------
-# 5) Plot гистограмму эмпирических собственных значений of the covariance matrix
-# -----------------------------
-eigenvalues = np.linalg.eigvalsh(Sigma)
-plt.figure(figsize=(10, 6))
-plt.hist(eigenvalues, bins=50, edgecolor='black')
-plt.title('Histogram of the empirical eigenvalues of the covariance matrix Σ')
-plt.xlabel('eigenvalues')
-plt.ylabel('Frequency')
-plt.grid(axis='y', alpha=0.75)
-plt.show()
-# Save the plot
-# plt.savefig('eigenvalue_histogram.png')
+# # -----------------------------
+# # 5) Plot гистограмму эмпирических собственных значений of the covariance matrix
+# # -----------------------------
+# eigenvalues = np.linalg.eigvalsh(Sigma)
+# plt.figure(figsize=(10, 6))
+# plt.hist(eigenvalues, bins=50, edgecolor='black')
+# plt.title('Histogram of the empirical eigenvalues of the covariance matrix Σ')
+# plt.xlabel('eigenvalues')
+# plt.ylabel('Frequency')
+# plt.grid(axis='y', alpha=0.75)
+# plt.show()
+# # Save the plot
+# # plt.savefig('eigenvalue_histogram.png')
 
 # -----------------------------
 # 6) Plot time series of relative l1 norm of weight changes
