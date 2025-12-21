@@ -99,7 +99,7 @@ for date in detrended_returns_df.index:
 # 4) Condition number of Σ
 # -----------------------------
 # Condition number gives a sense of numerical stability of the optimization.
-# High condition number -> ill-conditioned -> small changes in inputs can lead to large changes in outputs
+# High condition number -> ill-conditioned -> small cchanges in inputs can lead to large changes in outputs
 cond_number = float(np.linalg.cond(Sigma))  # condition number of Σ
 print(f"Condition number cond(Σ):     {cond_number:,.0f}")
 

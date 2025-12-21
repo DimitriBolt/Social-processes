@@ -77,7 +77,6 @@ if __name__ == '__main__':
                                          end_date_local='2025-10-01')
     detrended_returns_df: DataFrame = log_returns.get_log_returns()
 
-    # Для каждого дня в detrended_returns_df и для каждого столбца в detrended_returns_df посчитать среднее значение по окну за предыдущие 30 дней
     # detrended_returns_df: DataFrame = detrended_returns_df.rolling(window=45).mean().dropna()
 
     # Save to csv file detrended_returns_df to current directory
@@ -88,7 +87,6 @@ if __name__ == '__main__':
     print("Detrended returns saved to detrended_returns_df_200.csv")
 
 
-    # TO DO удалить закомментированный код ниже
     # # Save to pickle file detrended_returns_df to current directory
     # with open('detrended_returns_df.pkl', 'wb') as f:
     #     pickle.dump(detrended_returns_df, f)

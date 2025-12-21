@@ -1,32 +1,36 @@
 # plot_eig_hist_SigmaL_vs_SigmaRPCA.py
 # ------------------------------------------------------------
 # Compare eigenvalue distributions of Sigma_L and Sigma_RPCA (annualized).
-# Inputs:  Sigma_L.parquet, Sigma_RPCA.parquet
-# Output:  One figure, overlaid histograms (log-x).
+# Inputs : Sigma_L.parquet, Sigma_RPCA.parquet
+# Output : eig_hist_SigmaL_vs_SigmaRPCA.png
 # ------------------------------------------------------------
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-Sigma_L = pd.read_parquet("Sigma_L.parquet").astype("float64").values
-Sigma_RP = pd.read_parquet("Sigma_RPCA.parquet").astype("float64").values
+def main() -> None:
+    Sigma_L  = pd.read_parquet("Sigma_L.parquet").astype("float64").values
+    Sigma_RP = pd.read_parquet("Sigma_RPCA.parquet").astype("float64").values
 
-# Symmetric -> use eigvalsh for numerical stability
-evals_L  = np.linalg.eigvalsh(Sigma_L)
-evals_RP = np.linalg.eigvalsh(Sigma_RP)
+    evals_L  = np.linalg.eigvalsh(Sigma_L)
+    evals_RP = np.linalg.eigvalsh(Sigma_RP)
+    evals_L  = evals_L[evals_L  > 0]
+    evals_RP = evals_RP[evals_RP > 0]
 
-# Keep strictly positive for log-x visualization
-evals_L  = evals_L[evals_L  > 0]
-evals_RP = evals_RP[evals_RP > 0]
+    plt.figure(figsize=(8, 5))
+    bins = 50
+    plt.hist(evals_L,  bins=bins, alpha=0.5, label=r"$\Sigma_L$", density=True)
+    plt.hist(evals_RP, bins=bins, alpha=0.5, label=r"$\Sigma_{\text{RPCA}}$", density=True)
+    plt.xscale("log")
+    plt.xlabel("Eigenvalue (log scale)")
+    plt.ylabel("Density (histogram)")
+    plt.title("Eigenvalue spectra: Sigma_L vs Sigma_RPCA (annualized)")
+    plt.legend()
+    plt.tight_layout()
 
-plt.figure(figsize=(8, 5))
-bins = 50
-plt.hist(evals_L,  bins=bins, alpha=0.5, label=r"$∑_L$",  density=True)
-plt.hist(evals_RP, bins=bins, alpha=0.5, label=r"$∑_{\mathrm{R-PCA}}$", density=True)
-plt.xscale("log")
-plt.xlabel("Eigenvalue (log scale)")
-plt.ylabel("Density (histogram)")
-plt.title("Eigenvalue spectra: $∑_L$ vs $∑_{R-PCA}$ (annualized)")
-plt.legend()
-plt.tight_layout()
-plt.show()
+    plt.savefig("eig_hist_SigmaL_vs_SigmaRPCA.png", dpi=200, bbox_inches="tight")
+    # plt.show()
+    plt.close()
+
+if __name__ == "__main__":
+    main()
